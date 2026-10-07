@@ -12,11 +12,11 @@ def send_telegram(text):
     req = urllib.request.Request(url, data=payload, headers={'Content-Type': 'application/json'})
     try:
         urllib.request.urlopen(req)
+        print("Сообщение успешно отправлено в Telegram!")
     except Exception as e:
         print(f"Ошибка отправки в Telegram: {e}")
 
 def main():
-    # Если ключ начинается с AIzaSy, отправляем через URL, иначе — через Header (Bearer Token)
     if GEMINI_API_KEY.startswith("AIzaSy"):
         url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key={GEMINI_API_KEY}"
         headers = {'Content-Type': 'application/json'}
