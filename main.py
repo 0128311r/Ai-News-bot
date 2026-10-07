@@ -6,9 +6,10 @@ TELEGRAM_BOT_TOKEN = os.environ["TELEGRAM_BOT_TOKEN"]
 TELEGRAM_CHAT_ID = os.environ["TELEGRAM_CHAT_ID"]
 
 query = """
-Find the most important AI news from the last 24 hours.
-Focus on OpenAI, Google, Anthropic, Meta, xAI, NVIDIA, regulation, new AI models, AI products, chips, and major AI launches.
-Return concise results with source links.
+Найди самые важные новости про искусственный интеллект за последние 24 часа.
+Фокус: OpenAI, Google, Anthropic, Meta, xAI, NVIDIA, новые AI-модели, AI-продукты, чипы, регулирование и крупные запуски.
+Сделай ответ на русском языке.
+Для каждой новости дай короткую выжимку на русском и ссылку на источник.
 """
 
 response = requests.post(
