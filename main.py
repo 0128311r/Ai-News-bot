@@ -1,43 +1,35 @@
 import os
-import requests
-import feedparser
-from google import genai
+import json
+import urllib.request
 
-# Получение токенов и ключей из настроек окружения
 TELEGRAM_BOT_TOKEN = os.environ.get("TELEGRAM_BOT_TOKEN")
 TELEGRAM_CHAT_ID = os.environ.get("TELEGRAM_CHAT_ID")
 GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY")
 
-# 1. Сбор новостей ИИ из RSS-лент
-rss_urls = [
-    "https://techcrunch.com/category/artificial-intelligence/feed/",
-    "https://habr.com/ru/rss/hub/artificial_intelligence/all/?fl=ru"
-]
+def send_telegram(text):
+    url = f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/sendMessage"
+    payload = json.dumps({"chat_id": TELEGRAM_CHAT_ID, "text": text}).encode('utf-8')
+    req = urllib.request.Request(url, data=payload, headers={'Content-Type': 'application/json'})
+    urllib.request.urlopen(req)
 
-news_items = []
-for url in rss_urls:
-    feed = feedparser.parse(url)
-    for entry in feed.entries[:5]:  # Берём 5 свежих новостей
-        news_items.append(f"- {entry.title}: {entry.link}")
+def main():
+    url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key={GEMINI_API_KEY}"
+    data = json.dumps({
+        "contents": [{"parts": [{"text": "Сделай краткую сводку из 3 главных новостей ИИ за сегодня на русском языке."}]}]
+    }).encode('utf-8')
+    
+    req = urllib.request.Request(url, data=data, headers={'Content-Type': 'application/json'})
+    
+    try:
+        with urllib.request.urlopen(req) as response:
+            result = json.loads(response.read().decode('utf-8'))
+            if "candidates" in result:
+                text = result["candidates"][0]["content"]["parts"][0]["text"]
+                send_telegram(text)
+            else:
+                send_telegram(f"Ошибка от Gemini: {result}")
+    except Exception as e:
+        send_telegram(f"Ошибка запроса: {e}")
 
-raw_text = "\n".join(news_items)
-
-# 2. Обработка и выжимка через Gemini API
-client = genai.Client(api_key=GEMINI_API_KEY)
-prompt = f"Сделай краткую структурированную выжимку главных новостей ИИ за сегодня на русском языке:\n\n{raw_text}"
-
-response = client.models.generate_content(
-    model="gemini-2.5-flash",
-    contents=prompt
-)
-
-summary = response.text
-
-# 3. Отправка итогового отчёта в Telegram
-telegram_url = f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/sendMessage"
-payload = {
-    "chat_id": TELEGRAM_CHAT_ID,
-    "text": f"🤖 **Ежедневный дайджест новостей ИИ**\n\n{summary}",
-    "parse_mode": "Markdown"
-}
-requests.post(telegram_url, json=payload)
+if __name__ == "__main__":
+    main()
